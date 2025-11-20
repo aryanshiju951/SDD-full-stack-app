@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pillow
+numpy>=1.22.0
+ultralytics>=8.0.0
+python-multipart
+sqlalchemy
+azure-storage-blob
+python-dotenv
