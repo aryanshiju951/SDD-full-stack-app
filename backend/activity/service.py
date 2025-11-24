@@ -283,7 +283,7 @@ def delete_activity_blob(db: Session, activity_id: str):
 
 #-----------------------------------------------------------Demo------------------------------------------------------------------------#
 
-
+from config.service import get_thresholds
 from pathlib import Path
 
 config = load_config()
@@ -311,22 +311,104 @@ def list_activities_demo(db: Session):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to list activities: {str(e)}")
 
+
 def get_activity_demo(db: Session, activity_id: str):
+    low_thr, high_thr, _ = get_thresholds()
     activity = db.query(Activity).filter_by(id=activity_id).first()
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
-    return activity
+
+    images = db.query(ActivityImage).filter_by(activity_id=activity_id).all()
+
+    # Recalculate defect counts using detections + current thresholds
+    total_low = total_medium = total_high = 0
+    detections_summary = []
+    annotated_images = []
+
+    sync_images_view = []
+
+    for img in images:
+        img_low = img_med = img_high = 0
+        if img.detections:
+            for d in img.detections:
+                conf = float(d.get("confidence", 0.0))
+                if conf >= high_thr:
+                    img_high += 1
+                elif conf >= low_thr:
+                    img_med += 1
+                else:
+                    img_low += 1
+        total_low += img_low
+        total_medium += img_med
+        total_high += img_high
+
+        sync_images_view.append({
+            "id": img.id,
+            "filename": img.filename,
+            "status": img.status
+        })
+
+        if img.detections:
+            detections_summary.append({
+                "image_id": img.id,
+                "filename": img.filename,
+                "detections": img.detections
+            })
+        if img.annotated_blob_url:
+            annotated_images.append({
+                "image_id": img.id,
+                "filename": img.filename,
+                "annotated_path": img.annotated_blob_url
+            })
+
+    summary_final = {
+        "high_defects_final": total_high,
+        "medium_defects_final": total_medium,
+        "low_defects_final": total_low,
+        "detections": detections_summary,
+        "annotated_images": annotated_images,
+    }
+
+    return {
+        "activity": {
+            "id": activity.id,
+            "name": activity.name,
+            "status": activity.status,
+            "created_at": activity.created_at,
+            "images": [
+                {
+                    "id": img.id,
+                    "filename": img.filename,
+                    "status": img.status,
+                    "original_blob_url": img.original_blob_url,
+                    "annotated_blob_url": img.annotated_blob_url,
+                    "created_at": img.created_at,
+                }
+                for img in images
+            ]
+        },
+        "sync_result": {
+            "message": "Demo sync complete",
+            "activity_status": activity.status,
+            "images": sync_images_view,
+            "summary_final": summary_final
+        }
+    }
+
 
 def delete_activity_demo(db: Session, activity_id: str):
     activity = db.query(Activity).filter_by(id=activity_id).first()
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
-    try:
-        db.delete(activity)
-        db.commit()
-        return {"message": f"Activity {activity_id} deleted successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete activity: {str(e)}")
+
+    # Only delete DB records
+    db.query(ActivityImage).filter_by(activity_id=activity_id).delete()
+    db.query(Activity).filter_by(id=activity_id).delete()
+    db.commit()
+
+    log_audit(f"Deleted activity {activity_id} successfully (DB only)", "data/logs/audit.log")
+    return {"message": "Activity deleted", "activity_id": activity_id}
+
 
 def sync_images_demo(db: Session, activity_id: str):
     activity = db.query(Activity).filter_by(id=activity_id).first()

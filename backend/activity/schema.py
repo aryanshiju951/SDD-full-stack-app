@@ -108,3 +108,37 @@ class CreateAndSyncResponse(BaseModel):
     message: str
     activity: ActivityResponse     
     sync_result: SyncImagesResponse2
+
+class SyncSummaryFinal(BaseModel):  #  NEW
+    high_defects_final: int
+    medium_defects_final: int
+    low_defects_final: int
+    detections: List[ImageDetections]
+    annotated_images: List[AnnotatedImage]
+
+class SyncResultResponse(BaseModel):  # NEW
+    message: str
+    activity_status: str
+    images: List[SyncImageInfo]
+    summary_final: SyncSummaryFinal
+
+class ActivityImageResponse(BaseModel):  # NEW
+    id: int
+    filename: str
+    status: str
+    original_blob_url: Optional[str]
+    annotated_blob_url: Optional[str]
+    created_at: datetime
+
+
+class ActivityResponseGet(BaseModel):    # NEW
+    id: str
+    name: str
+    status: str
+    created_at: datetime
+    images: List[ActivityImageResponse]
+
+
+class ActivityDetailResponse(BaseModel):  # NEW (final wrapper for GET)
+    activity: ActivityResponseGet
+    sync_result: SyncResultResponse

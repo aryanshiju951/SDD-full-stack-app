@@ -58,8 +58,10 @@ class AnalyticsService:
             total_low = total_medium = total_high = 0
             activity_map: Dict[str, Dict[str, int]] = {}
 
-            # NEW: defects vs time counter
+            # defects vs time counters
             defects_by_day = Counter()
+            defects_by_month = Counter()      # CHANGE: added monthly aggregation
+            defects_by_weekday = Counter()    # CHANGE: added weekday aggregation
 
             for act_id, detections, created_at in all_images:
                 img_low, img_med, img_high = self._compute_image_counts(
@@ -75,10 +77,16 @@ class AnalyticsService:
                 activity_map[act_id]["medium"] += img_med
                 activity_map[act_id]["high"] += img_high
 
-                # 🔎 Highlighted logic: aggregate defects by day
+                # aggregate defects by day/month/weekday
                 if created_at:
                     day = created_at.date().isoformat()
                     defects_by_day[day] += (img_low + img_med + img_high)
+
+                    month = created_at.strftime("%Y-%m")       # e.g. "2025-11"
+                    defects_by_month[month] += (img_low + img_med + img_high)
+
+                    weekday = created_at.strftime("%A")        # e.g. "Monday"
+                    defects_by_weekday[weekday] += (img_low + img_med + img_high)
 
             total_defects = total_low + total_medium + total_high
 
@@ -132,7 +140,9 @@ class AnalyticsService:
                 "total_activities": total_activities,
                 "defect_severity_distribution": defect_severity_distribution,
                 "activity_severity_distribution": activity_severity_distribution,
-                "defects_over_time": dict(defects_by_day),  # 🔎 Highlighted addition
+                "defects_over_time": dict(defects_by_day),        # daily trend
+                "defects_by_month": dict(defects_by_month),       # CHANGE: monthly trend
+                "defects_by_weekday": dict(defects_by_weekday),   # CHANGE: weekday trend
                 "warnings": warnings or None,
             }
 

@@ -13,6 +13,7 @@ def read_thresholds():
         low, high, source = get_thresholds()
         log_audit("Thresholds read via API", LOG_PATH)
         return ThresholdsResponse(low=low, high=high, source=source)
+        # No changes here credentials are not exposed in API
     except HTTPException as e:
         log_audit(f"HTTPException reading thresholds: {e.detail}", LOG_PATH)
         raise e
@@ -26,6 +27,7 @@ def update_thresholds(payload: Thresholds):
         low, high = set_thresholds(payload)
         log_audit("Thresholds updated via API", LOG_PATH)
         return ThresholdsResponse(low=low, high=high, source="user")
+        # No changes here — credentials remain hidden
     except HTTPException as e:
         log_audit(f"HTTPException updating thresholds: {e.detail}", LOG_PATH)
         raise e
@@ -40,6 +42,7 @@ def reset_thresholds():
         low, high, source = get_thresholds()
         log_audit("Thresholds reset via API", LOG_PATH)
         return ThresholdsResponse(low=low, high=high, source=source)
+        # No changes here — credentials remain hidden
     except HTTPException as e:
         log_audit(f"HTTPException resetting thresholds: {e.detail}", LOG_PATH)
         raise e

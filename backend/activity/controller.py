@@ -11,7 +11,8 @@ from activity.schema import (
     DeleteResponse,
     SyncImagesResponse,
     CreateAndSyncResponse,
-    SyncImagesResponse2
+    SyncImagesResponse2,
+    ActivityDetailResponse
 )
 
 
@@ -135,17 +136,17 @@ def create_activity_demo(db: Session = Depends(get_db)):
 @router.get("/", response_model=list[ActivityResponse])
 def list_activities_demo(db: Session = Depends(get_db)):
     try:
-        return service.list_activities(db)
+        return service.list_activities_demo(db)
     except HTTPException as e:
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected error listing activities: {str(e)}")
 
 # Get activity by id
-@router.get("/{activity_id}", response_model=ActivityResponse)
+@router.get("/{activity_id}", response_model=ActivityDetailResponse)
 def get_activity_demo(activity_id: str, db: Session = Depends(get_db)):
     try:
-        return service.get_activity(db, activity_id)
+        return service.get_activity_demo(db, activity_id)
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -155,7 +156,7 @@ def get_activity_demo(activity_id: str, db: Session = Depends(get_db)):
 @router.delete("/{activity_id}", response_model=DeleteResponse)
 def delete_activity_demo(activity_id: str, db: Session = Depends(get_db)):
     try:
-        return service.delete_activity(db, activity_id)
+        return service.delete_activity_demo(db, activity_id)
     except HTTPException as e:
         raise e
     except Exception as e:

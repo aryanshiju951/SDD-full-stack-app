@@ -26,4 +26,6 @@ class AnalyticsSummaryResponse(BaseModel):
     defect_severity_distribution: SeverityDistribution
     activity_severity_distribution: ActivitySeverityDistribution
     defects_over_time: Dict[str, int]  # commented out for now
+    defects_by_month: Dict[str, int]       #  monthly trend
+    defects_by_weekday: Dict[str, int]  # weekday trend
     warnings: Optional[list[str]] = None

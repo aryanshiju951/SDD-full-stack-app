@@ -4,8 +4,8 @@ from fastapi import HTTPException
 from typing import Tuple
 from config.schema import Thresholds
 from utils.logger import log_audit
-
 from pathlib import Path
+
 CONFIG_FILE = Path(__file__).resolve().parent.parent / "config.json"
 LOG_PATH = "data/logs/audit.log"
 
@@ -14,7 +14,10 @@ DEFAULT_HIGH = 0.7
 
 def _load_config_file() -> dict:
     if not os.path.exists(CONFIG_FILE):
-        return {"low": DEFAULT_LOW, "high": DEFAULT_HIGH}
+        return {
+            "low": DEFAULT_LOW,
+            "high": DEFAULT_HIGH
+        }
     try:
         with open(CONFIG_FILE, "r") as f:
             return json.load(f)
@@ -47,8 +50,11 @@ def get_thresholds() -> Tuple[float, float, str]:
 
 def set_thresholds(new: Thresholds) -> Tuple[float, float]:
     try:
-        data = {"low": new.low, "high": new.high}
-        _save_config_file(data)
+        cfg = _load_config_file()
+        # Preserve other keys (Azure/IoT credentials) instead of overwriting
+        cfg["low"] = new.low
+        cfg["high"] = new.high
+        _save_config_file(cfg)
         log_audit(f"Thresholds updated: low={new.low}, high={new.high}", LOG_PATH)
         return new.low, new.high
     except HTTPException as e:
@@ -65,3 +71,4 @@ def clear_thresholds():
     except Exception as e:
         log_audit(f"Error resetting thresholds: {str(e)}", LOG_PATH)
         raise HTTPException(status_code=500, detail=f"Failed to reset thresholds: {str(e)}")
+

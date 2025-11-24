@@ -1,4 +1,10 @@
 {
   "low": 0.3,
-  "high": 0.7
+  "high": 0.7,
+  "AZURE_ACCOUNT_NAME": "dummy_account",
+  "AZURE_ACCOUNT_KEY": "dummy_key",
+  "BLOB_CONTAINER_NAME": "dummy_container",
+  "IOT_DEVICE_ID": "dummy_device",
+  "IOT_DEVICE_ENDPOINT": "http://dummy.iot/device/images",
+  "IOT_API_KEY": "dummy_key"
 }
