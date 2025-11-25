@@ -290,7 +290,9 @@ config = load_config()
 low_thr = config["low"]
 high_thr = config["high"]
 
-DEMO_FOLDER = Path("data/demo_images")
+BASE_DIR = Path(__file__).resolve().parent.parent
+DEMO_FOLDER = BASE_DIR / "data/demo_images"
+
 
 def create_activity_demo(db: Session):
     try:
