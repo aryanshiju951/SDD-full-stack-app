@@ -285,13 +285,13 @@ def delete_activity_blob(db: Session, activity_id: str):
 
 from config.service import get_thresholds
 from pathlib import Path
-
+from config.settings import DEMO_FOLDER
 config = load_config()
 low_thr = config["low"]
 high_thr = config["high"]
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DEMO_FOLDER = BASE_DIR / "data/demo_images"
+
 
 
 def create_activity_demo(db: Session):

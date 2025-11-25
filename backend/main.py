@@ -5,6 +5,8 @@ from activity.controller import router as activity_router
 from analytics.controller import router as analytics_router
 from config.controller import router as config_router
 from dotenv import load_dotenv
+from config.settings import DEMO_FOLDER
+from fastapi.staticfiles import StaticFiles
 import os
 
 # Load environment variables from .env file
@@ -12,7 +14,7 @@ load_dotenv()
 
 # Create FastAPI app
 app = FastAPI(title="Surface Defect Detection API", version="1.0.0")
-
+app.mount("/demo_images", StaticFiles(directory=str(DEMO_FOLDER)), name="demo_images")
 # Initialize database tables
 init_db()
 
