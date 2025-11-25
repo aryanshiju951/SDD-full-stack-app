@@ -567,7 +567,7 @@ def sync_images_demo2(db: Session, activity_id: str):
                 with open(annotated_path, "wb") as f:
                     f.write(annotated_bytes)
                 image.status = "defects_detected"
-                image.annotated_blob_url = annotated_path.as_posix()
+                image.annotated_blob_url = f"/demo_images/annotated_{fname}"
             else:
                 image.status = "no_defects"
 
