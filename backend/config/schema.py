@@ -16,16 +16,15 @@ class ThresholdsResponse(BaseModel):
     high: float
     source: str  # "user" or "default"
 
-# Note: No changes here — credentials are not exposed in API schema
 class ConfigExample(BaseModel):
     low: float
     high: float
-    AZURE_ACCOUNT_NAME: Optional[str]=None
-    AZURE_ACCOUNT_KEY: Optional[str]=None
-    BLOB_CONTAINER_NAME: Optional[str]=None
-    IOT_DEVICE_ID: Optional[str]=None
-    IOT_DEVICE_ENDPOINT: Optional[str]=None
-    IOT_API_KEY: Optional[str]=None
+    AZURE_ACCOUNT_NAME: Optional[str] = None
+    AZURE_ACCOUNT_KEY: Optional[str] = None
+    BLOB_CONTAINER_NAME: Optional[str] = None
+    IOT_DEVICE_ID: Optional[str] = None
+    IOT_DEVICE_ENDPOINT: Optional[str] = None
+    IOT_API_KEY: Optional[str] = None
 
     class Config:
         json_schema_extra = {

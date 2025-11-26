@@ -51,7 +51,6 @@ def get_thresholds() -> Tuple[float, float, str]:
 def set_thresholds(new: Thresholds) -> Tuple[float, float]:
     try:
         cfg = _load_config_file()
-        # Preserve other keys (Azure/IoT credentials) instead of overwriting
         cfg["low"] = new.low
         cfg["high"] = new.high
         _save_config_file(cfg)
@@ -71,4 +70,3 @@ def clear_thresholds():
     except Exception as e:
         log_audit(f"Error resetting thresholds: {str(e)}", LOG_PATH)
         raise HTTPException(status_code=500, detail=f"Failed to reset thresholds: {str(e)}")
-
