@@ -109,11 +109,17 @@ class CreateAndSyncResponse(BaseModel):
     activity: ActivityResponse     
     sync_result: SyncImagesResponse2
 
+class DefectTypewise(BaseModel):
+    image_id: int
+    patches_count: int
+    scratches_count: int
+
 class SyncSummaryFinal(BaseModel):  #  NEW
     high_defects_final: int
     medium_defects_final: int
     low_defects_final: int
     detections: List[ImageDetections]
+    defect_count_typewise: List[DefectTypewise]
     annotated_images: List[AnnotatedImage]
 
 class SyncResultResponse(BaseModel):  # NEW

@@ -316,30 +316,39 @@ def list_activities_demo(db: Session):
 
 def get_activity_demo(db: Session, activity_id: str):
     low_thr, high_thr, _ = get_thresholds()
+
     activity = db.query(Activity).filter_by(id=activity_id).first()
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
 
     images = db.query(ActivityImage).filter_by(activity_id=activity_id).all()
 
-    # Recalculate defect counts using detections + current thresholds
     total_low = total_medium = total_high = 0
     detections_summary = []
     annotated_images = []
-
     sync_images_view = []
+    defect_cnt = []
 
     for img in images:
         img_low = img_med = img_high = 0
+        patches_cnt = scratches_cnt = 0
+
         if img.detections:
             for d in img.detections:
                 conf = float(d.get("confidence", 0.0))
+                defect_class = d.get("class", "")
                 if conf >= high_thr:
                     img_high += 1
                 elif conf >= low_thr:
                     img_med += 1
                 else:
                     img_low += 1
+
+                if defect_class == "patches":
+                    patches_cnt += 1
+                elif defect_class == "scratches":
+                    scratches_cnt += 1
+
         total_low += img_low
         total_medium += img_med
         total_high += img_high
@@ -356,6 +365,12 @@ def get_activity_demo(db: Session, activity_id: str):
                 "filename": img.filename,
                 "detections": img.detections
             })
+            defect_cnt.append({
+                "image_id": img.id,
+                "patches_count": patches_cnt,
+                "scratches_count": scratches_cnt
+            })
+
         if img.annotated_blob_url:
             annotated_images.append({
                 "image_id": img.id,
@@ -368,8 +383,11 @@ def get_activity_demo(db: Session, activity_id: str):
         "medium_defects_final": total_medium,
         "low_defects_final": total_low,
         "detections": detections_summary,
+        "defect_count_typewise": defect_cnt,
         "annotated_images": annotated_images,
     }
+
+    log_audit(f"Got activity {activity_id} successfully", "data1/logs/audit.log")
 
     return {
         "activity": {
@@ -396,7 +414,6 @@ def get_activity_demo(db: Session, activity_id: str):
             "summary_final": summary_final
         }
     }
-
 
 def delete_activity_demo(db: Session, activity_id: str):
     activity = db.query(Activity).filter_by(id=activity_id).first()
