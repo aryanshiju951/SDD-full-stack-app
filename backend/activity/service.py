@@ -30,11 +30,11 @@ def _blob_url(blob_name: str) -> str:
     return container_client.get_blob_client(blob_name).url
 
 
-def create_activity(db: Session, name: str):
+def create_activity(db: Session, name: str, from_value: str = None, to_value: str = None):
     if not name or not name.strip():
         raise HTTPException(status_code=400, detail="Activity name is required")
     activity_id = str(uuid.uuid4())
-    activity = Activity(id=activity_id, name=name.strip(), status="pending")
+    activity = Activity(id=activity_id, name=name.strip(), status="pending", from_value=from_value,to_value=to_value)
     db.add(activity)
     db.commit()
     log_audit(f"Created activity: {name}", "data/logs/audit.log")
@@ -294,12 +294,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 
-def create_activity_demo(db: Session):
+def create_activity_demo(db: Session, from_value: str = None, to_value: str = None):
     try:
         activity_id = str(uuid.uuid4())
         random_suffix=str(uuid.uuid4())[:8]
         name=f"Activity_{random_suffix}"
-        activity = Activity(id=activity_id, name=name, status="pending")
+        activity = Activity(id=activity_id, name=name, status="pending",from_value=from_value, to_value=to_value)
         db.add(activity)
         db.commit()
         db.refresh(activity)
@@ -411,7 +411,11 @@ def get_activity_demo(db: Session, activity_id: str):
             "message": "Demo sync complete",
             "activity_status": activity.status,
             "images": sync_images_view,
-            "summary_final": summary_final
+            "summary_final": summary_final,
+            "range": {           # echo back the range
+                "from": activity.from_value,
+                "to": activity.to_value
+            }
         }
     }
 
@@ -629,14 +633,18 @@ def sync_images_demo2(db: Session, activity_id: str):
         "summary": summary,
     }
 
-def create_and_sync(db: Session):
+def create_and_sync(db: Session, from_value: str = None, to_value: str = None):
     try:
-        activity=create_activity_demo(db)
+        activity=create_activity_demo(db,from_value=from_value,to_value=to_value)
         result=sync_images_demo2(db, activity.id)
         return {
             "message": "Activity created and synced",
             "activity": activity,
-            "sync_result": result
+            "sync_result": result,
+            "range":{
+                "from": activity.from_value,
+                "to":activity.to_value
+            }
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed: {str(e)}")

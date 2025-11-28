@@ -29,6 +29,9 @@ class Activity(Base):
     status = Column(String, default="pending")  # pending | in-progress | completed | error
     created_at = Column(DateTime, default=datetime.now(timezone.utc))
 
+    from_value = Column(String, nullable=True)
+    to_value = Column(String, nullable=True)
+
     images = relationship("ActivityImage", back_populates="activity", cascade="all, delete-orphan")
 
 class ActivityImage(Base):
@@ -54,5 +57,5 @@ class ActivityImage(Base):
 
     activity = relationship("Activity", back_populates="images")
 
-def init_db():
-    Base.metadata.create_all(bind=engine)
+#def init_db():
+    #Base.metadata.create_all(bind=engine)

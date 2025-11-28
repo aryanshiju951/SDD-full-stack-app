@@ -184,9 +184,9 @@ def sync_demo2(activity_id: str, db: Session = Depends(get_db)):
 
 # create and sync
 @router.post("/create-and-sync", response_model=CreateAndSyncResponse)
-def create_and_sync(db: Session = Depends(get_db)):
+def create_and_sync(from_value: str = None, to_value: str = None, db: Session = Depends(get_db)):
     try:
-        return service.create_and_sync(db)
+        return service.create_and_sync(db, from_value=from_value, to_value=to_value)
     except HTTPException as e:
         raise e
     except Exception as e:

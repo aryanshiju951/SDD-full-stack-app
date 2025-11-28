@@ -21,6 +21,8 @@ class ActivityResponse(BaseModel):
     name: str
     status: str
     created_at: datetime
+    from_value: Optional[str]
+    to_value:Optional[str]
     images: List[ImageResponse]
 
     class Config:
@@ -108,6 +110,7 @@ class CreateAndSyncResponse(BaseModel):
     message: str
     activity: ActivityResponse     
     sync_result: SyncImagesResponse2
+    range: Dict[str,Optional[str]]
 
 class DefectTypewise(BaseModel):
     image_id: int
@@ -127,6 +130,7 @@ class SyncResultResponse(BaseModel):  # NEW
     activity_status: str
     images: List[SyncImageInfo]
     summary_final: SyncSummaryFinal
+    range:Dict[str, Optional[str]]
 
 class ActivityImageResponse(BaseModel):  # NEW
     id: int

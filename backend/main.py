@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from db import init_db
+#from db import init_db
 from activity.controller import router as activity_router
 from analytics.controller import router as analytics_router
 from config.controller import router as config_router
@@ -16,7 +16,7 @@ load_dotenv()
 app = FastAPI(title="Surface Defect Detection API", version="1.0.0")
 app.mount("/demo_images", StaticFiles(directory=str(DEMO_FOLDER)), name="demo_images")
 # Initialize database tables
-init_db()
+#init_db()
 
 # Add CORS middleware
 app.add_middleware(

@@ -7,3 +7,4 @@ python-multipart
 sqlalchemy
 azure-storage-blob
 python-dotenv
+alembic
