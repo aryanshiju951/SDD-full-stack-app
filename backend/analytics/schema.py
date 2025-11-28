@@ -1,5 +1,6 @@
-from typing import Optional
+from typing import Optional, List   
 from pydantic import BaseModel
+
 
 class SeverityDistribution(BaseModel):
     low: int
@@ -29,3 +30,10 @@ class AnalyticsSummaryResponse(BaseModel):
     defects_by_month: Dict[str, int]       #  monthly trend
     defects_by_weekday: Dict[str, int]  # weekday trend
     warnings: Optional[list[str]] = None
+
+class MonthUsageItem(BaseModel):
+    period: str
+    defect_count: int
+
+class MonthlyDefectsResponse(BaseModel):
+    month_usage: List[MonthUsageItem]

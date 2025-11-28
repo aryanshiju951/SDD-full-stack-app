@@ -148,3 +148,4 @@ class ActivityResponseGet(BaseModel):    # NEW
 class ActivityDetailResponse(BaseModel):  # NEW (final wrapper for GET)
     activity: ActivityResponseGet
     sync_result: SyncResultResponse
+

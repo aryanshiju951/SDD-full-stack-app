@@ -10,6 +10,8 @@ from utils.logger import log_audit
 
 LOG_PATH = "data/logs/audit.log"
 
+from datetime import date, timedelta
+from calendar import monthrange
 
 class AnalyticsService:
     def __init__(self, db: Session):
@@ -154,4 +156,60 @@ class AnalyticsService:
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to compute analytics summary: {str(e)}"
+            )
+        
+    def get_monthly_defects(
+        self, year: Optional[int] = None, month: Optional[int] = None,
+        override_low: Optional[float] = None, override_high: Optional[float] = None
+    ) -> Dict:
+        """
+        Return daily defect counts for a given month (defaults to current month).
+        """
+        try:
+            today = date.today()
+            year = year or today.year
+            month = month or today.month
+
+            cfg_low, cfg_high, _ = get_thresholds()
+            low_thr = override_low if override_low is not None else cfg_low
+            high_thr = override_high if override_high is not None else cfg_high
+
+            # Get all images created in this month
+            start_date = date(year, month, 1)
+            end_day = monthrange(year, month)[1]
+            end_date = date(year, month, end_day)
+
+            all_images = self.db.query(
+                ActivityImage.detections,
+                ActivityImage.created_at
+            ).filter(
+                ActivityImage.created_at >= start_date,
+                ActivityImage.created_at <= end_date
+            ).all()
+
+            # Initialize daily counts
+            month_usage: List[Dict] = []
+            for day in range(1, end_day + 1):
+                period = date(year, month, day).isoformat()
+                month_usage.append({"period": period, "defect_count": 0})
+
+            # Fill counts
+            for detections, created_at in all_images:
+                if not created_at:
+                    continue
+                day_index = created_at.day - 1
+                img_low, img_med, img_high = self._compute_image_counts(
+                    detections, low_thr, high_thr
+                )
+                month_usage[day_index]["defect_count"] += (img_low + img_med + img_high)
+
+            result = {"month_usage": month_usage}
+            log_audit(f"Monthly defects computed for {year}-{month}", LOG_PATH)
+            return result
+
+        except Exception as e:
+            log_audit(f"Error computing monthly defects: {str(e)}", LOG_PATH)
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to compute monthly defects: {str(e)}"
             )
