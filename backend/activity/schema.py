@@ -22,7 +22,7 @@ class ActivityResponse(BaseModel):
     status: str
     created_at: datetime
     from_value: Optional[str]
-    to_value:Optional[str]
+    to_value: Optional[str]
     images: List[ImageResponse]
 
     class Config:
@@ -152,4 +152,3 @@ class ActivityResponseGet(BaseModel):    # NEW
 class ActivityDetailResponse(BaseModel):  # NEW (final wrapper for GET)
     activity: ActivityResponseGet
     sync_result: SyncResultResponse
-

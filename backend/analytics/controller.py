@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from analytics.schema import AnalyticsSummaryResponse, MonthlyDefectsResponse
 from analytics.service import AnalyticsService
-from db import get_db
+from db.core import get_db
 from utils.logger import log_audit
 
 LOG_PATH = "data/logs/audit.log"
@@ -40,7 +40,6 @@ def get_analytics_summary(
     except Exception as e:
         log_audit(f"Unexpected error in analytics summary: {str(e)}", LOG_PATH)
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
-
 @router.get("/monthly-defects", response_model=MonthlyDefectsResponse)
 def get_monthly_defects(year: int = None, month: int = None, db: Session = Depends(get_db)):
     try:

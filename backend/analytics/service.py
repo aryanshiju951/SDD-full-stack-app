@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from collections import Counter
 
-from db import Activity, ActivityImage
+from db.db import Activity, ActivityImage
 from config.service import get_thresholds
 from utils.logger import log_audit
 
@@ -12,7 +12,6 @@ LOG_PATH = "data/logs/audit.log"
 
 from datetime import date, timedelta
 from calendar import monthrange
-
 class AnalyticsService:
     def __init__(self, db: Session):
         self.db = db
@@ -157,7 +156,6 @@ class AnalyticsService:
                 status_code=500,
                 detail=f"Failed to compute analytics summary: {str(e)}"
             )
-        
     def get_monthly_defects(
         self, year: Optional[int] = None, month: Optional[int] = None,
         override_low: Optional[float] = None, override_high: Optional[float] = None
@@ -213,3 +211,4 @@ class AnalyticsService:
                 status_code=500,
                 detail=f"Failed to compute monthly defects: {str(e)}"
             )
+

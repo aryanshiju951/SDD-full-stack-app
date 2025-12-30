@@ -1,25 +1,9 @@
-import os
-from sqlalchemy import create_engine, Column, String, DateTime, Integer, ForeignKey, JSON, func
-from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, JSON, func
+from sqlalchemy.orm import declarative_base, relationship
 from datetime import datetime, timezone
 
-# Database connection
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./defects.db")
-
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {},
-)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Base class for models
 Base = declarative_base()
-
-# Dependency Injection
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 class Activity(Base):
     __tablename__ = "activities"
@@ -27,7 +11,7 @@ class Activity(Base):
     id = Column(String, primary_key=True, index=True)
     name = Column(String, nullable=False)
     status = Column(String, default="pending")  # pending | in-progress | completed | error
-    created_at = Column(DateTime, default=datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     from_value = Column(String, nullable=True)
     to_value = Column(String, nullable=True)
@@ -56,6 +40,3 @@ class ActivityImage(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     activity = relationship("Activity", back_populates="images")
-
-#def init_db():
-    #Base.metadata.create_all(bind=engine)

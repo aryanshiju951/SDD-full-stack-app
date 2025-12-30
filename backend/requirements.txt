@@ -8,3 +8,4 @@ sqlalchemy
 azure-storage-blob
 python-dotenv
 alembic
+psycopg2-binary

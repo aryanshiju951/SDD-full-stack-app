@@ -2,7 +2,7 @@ import os
 import uuid
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.orm import Session
-from db import Activity, ActivityImage
+from db.db import Activity, ActivityImage
 from azure.storage.blob import BlobServiceClient, ContentSettings
 from models.detector import detect_defects
 from utils.logger import log_audit
@@ -24,20 +24,20 @@ container_client = blob_service_client.get_container_client(CONTAINER_NAME)
 ORIGINAL_PREFIX = "original/"
 ANNOTATED_PREFIX = "annotated/"
 
-
+LOG_PATH = "data/logs/audit.log"
 
 def _blob_url(blob_name: str) -> str:
     return container_client.get_blob_client(blob_name).url
 
 
-def create_activity(db: Session, name: str, from_value: str = None, to_value: str = None):
+def create_activity(db: Session, name: str):
     if not name or not name.strip():
         raise HTTPException(status_code=400, detail="Activity name is required")
     activity_id = str(uuid.uuid4())
-    activity = Activity(id=activity_id, name=name.strip(), status="pending", from_value=from_value,to_value=to_value)
+    activity = Activity(id=activity_id, name=name.strip(), status="pending")
     db.add(activity)
     db.commit()
-    log_audit(f"Created activity: {name}", "data/logs/audit.log")
+    log_audit(f"Created activity: {name}", LOG_PATH)
     return {"message": "Activity created", "activity_id": activity_id}
 
 
@@ -95,12 +95,12 @@ def sync_images(db: Session, activity_id: str):
 
     activity.status = "in-progress"
     db.commit()
-    log_audit(f"Listing blobs of activity: {activity_id} successfully", "data/logs/audit.log")
+    log_audit(f"Listing blobs of activity: {activity_id} successfully", LOG_PATH)
 
     try:
         blobs = list(container_client.list_blobs(name_starts_with=ORIGINAL_PREFIX))
     except Exception as e:
-        log_audit(f"Failed to list blobs of activity {activity_id}; Error: {str(e)}", "data/logs/audit.log")
+        log_audit(f"Failed to list blobs of activity {activity_id}; Error: {str(e)}", LOG_PATH)
         raise HTTPException(status_code=502, detail="Failed to list blobs from container")
 
     new_count, processed_count, error_count = 0, 0, 0
@@ -162,7 +162,7 @@ def sync_images(db: Session, activity_id: str):
             image.status = "error"
             db.commit()
             error_count += 1
-            log_audit(f"Sync Error {str(e)} for {filename_only} in activity {activity_id}", "data/logs/audit.log")
+            log_audit(f"Sync Error {str(e)} for {filename_only} in activity {activity_id}", LOG_PATH)
 
     # Final activity status
     if error_count > 0:
@@ -179,7 +179,7 @@ def sync_images(db: Session, activity_id: str):
         "processed_images": processed_count,
         "error_images": error_count,
     }
-    log_audit(f"Sync completed for activity {activity_id}", "data/logs/audit.log")
+    log_audit(f"Sync completed for activity {activity_id}", LOG_PATH)
     return final_resp
 
 
@@ -206,7 +206,7 @@ def get_activity_summary(db: Session, activity_id: str):
                 "detections": image.detections or [],
             })
 
-    log_audit(f"Summary generated for activity {activity_id}; Defect images:{str(len(summary['defect_images']))}", "data/logs/audit.log")
+    log_audit(f"Summary generated for activity {activity_id}; Defect images:{str(len(summary['defect_images']))}", LOG_PATH)
     return summary
 
 
@@ -220,7 +220,7 @@ def delete_activity(db: Session, activity_id: str):
     db.query(Activity).filter_by(id=activity_id).delete()
     db.commit()
 
-    log_audit(f"Deleted activity {activity_id} successfully (DB only)", "data/logs/audit.log")
+    log_audit(f"Deleted activity {activity_id} successfully (DB only)", LOG_PATH)
     return {"message": "Activity deleted", "activity_id": activity_id}
 
 
@@ -241,7 +241,7 @@ async def upload_image(file: UploadFile):
             content_settings=ContentSettings(content_type=file.content_type)  # inline display
         )
 
-        log_audit(f"Uploaded image {blob_name} successfully", "data/logs/audit.log")
+        log_audit(f"Uploaded image {blob_name} successfully", LOG_PATH)
 
         return {
             "message": "Upload successful",
@@ -249,7 +249,7 @@ async def upload_image(file: UploadFile):
             "blob_name": blob_name
         }
     except Exception as e:
-        log_audit(f"Upload failed for {file.filename}; Error: {str(e)}", "data/logs/audit.log")
+        log_audit(f"Upload failed for {file.filename}; Error: {str(e)}", LOG_PATH)
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
 def delete_activity_blob(db: Session, activity_id: str):
@@ -262,23 +262,23 @@ def delete_activity_blob(db: Session, activity_id: str):
         try:
             original_blob_name = f"{ORIGINAL_PREFIX}{filename_only}"
             container_client.delete_blob(original_blob_name)
-            log_audit(f"Deleted original blob {original_blob_name} successfully of activity {activity_id}", "data/logs/audit.log")
+            log_audit(f"Deleted original blob {original_blob_name} successfully of activity {activity_id}", LOG_PATH)
         except Exception as e:
-            log_audit(f"Failed to delete original blob {original_blob_name} of activity {activity_id}; Error: {str(e)}", "data/logs/audit.log")
+            log_audit(f"Failed to delete original blob {original_blob_name} of activity {activity_id}; Error: {str(e)}", LOG_PATH)
 
         if img.annotated_blob_url:
             try:
                 annotated_blob_name = f"{ANNOTATED_PREFIX}{filename_only}"
                 container_client.delete_blob(annotated_blob_name)
-                log_audit(f"Deleted annotated blob {annotated_blob_name} successfully of activity {activity_id}", "data/logs/audit.log")
+                log_audit(f"Deleted annotated blob {annotated_blob_name} successfully of activity {activity_id}", LOG_PATH)
             except Exception as e:
-                log_audit(f"Failed to delete annotated blob {annotated_blob_name} of activity {activity_id}; Error: {str(e)}", "data/logs/audit.log")
+                log_audit(f"Failed to delete annotated blob {annotated_blob_name} of activity {activity_id}; Error: {str(e)}", LOG_PATH)
 
     db.query(ActivityImage).filter_by(activity_id=activity_id).delete()
     db.query(Activity).filter_by(id=activity_id).delete()
     db.commit()
 
-    log_audit(f"Deleted activity {activity_id} successfully", "data/logs/audit.log")
+    log_audit(f"Deleted activity {activity_id} successfully", LOG_PATH)
     return {"message": "Activity deleted", "activity_id": activity_id}
 
 #-----------------------------------------------------------Demo------------------------------------------------------------------------#
@@ -286,12 +286,13 @@ def delete_activity_blob(db: Session, activity_id: str):
 from config.service import get_thresholds
 from pathlib import Path
 from config.settings import DEMO_FOLDER
+from sqlalchemy import desc
+
 config = load_config()
 low_thr = config["low"]
 high_thr = config["high"]
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 
 def create_activity_demo(db: Session, from_value: str = None, to_value: str = None):
@@ -309,7 +310,7 @@ def create_activity_demo(db: Session, from_value: str = None, to_value: str = No
 
 def list_activities_demo(db: Session):
     try:
-        return db.query(Activity).all()
+        return db.query(Activity).order_by(desc(Activity.created_at)).all()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to list activities: {str(e)}")
 
@@ -387,7 +388,7 @@ def get_activity_demo(db: Session, activity_id: str):
         "annotated_images": annotated_images,
     }
 
-    log_audit(f"Got activity {activity_id} successfully", "data1/logs/audit.log")
+    log_audit(f"Got activity {activity_id} successfully", LOG_PATH)
 
     return {
         "activity": {
@@ -429,7 +430,7 @@ def delete_activity_demo(db: Session, activity_id: str):
     db.query(Activity).filter_by(id=activity_id).delete()
     db.commit()
 
-    log_audit(f"Deleted activity {activity_id} successfully (DB only)", "data/logs/audit.log")
+    log_audit(f"Deleted activity {activity_id} successfully (DB only)", LOG_PATH)
     return {"message": "Activity deleted", "activity_id": activity_id}
 
 

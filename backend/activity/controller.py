@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List
-from db import get_db
+from db.core import get_db
 from activity import service
 from activity.schema import (
     ActivityCreate,
